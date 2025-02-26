@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+<head><meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment Verification</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/inputmask/5.0.8/inputmask.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/inputmask/5.0.8/inputmask.min.js
     <style>
     /* Original Styles */
     * {
@@ -499,9 +498,9 @@
             `;
         }
 
-        // Transaction History
+        // Transaction History (Fixed)
         function updateTransactionHistory(details) {
-            const transactions = JSON.parse(localStorage.getItem('transactions') || [];
+            const transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
             transactions.unshift({
                 date: new Date().toISOString(),
                 details: details,
@@ -512,20 +511,19 @@
         }
 
         function renderTransactions() {
-            const transactions = JSON.parse(localStorage.getItem('transactions') || [];
+            const transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
             document.getElementById('transactionList').innerHTML = transactions
                 .map(t => `<li>${new Date(t.date).toLocaleString()} - ${t.details.slice(0, 15)}... - $${t.amount}</li>`)
                 .join('');
         }
 
-        // Event Listeners
+        // Event Listeners (Fixed Validation)
         document.addEventListener('DOMContentLoaded', () => {
             initializeInputMask('crypto');
             updateConversionRates();
             resetTimer();
             renderTransactions();
             
-            // Accessibility
             document.getElementById('paymentInput').setAttribute('aria-describedby', 'errorMessage successMessage');
             document.addEventListener('mousemove', resetTimer);
             document.addEventListener('keypress', resetTimer);
@@ -536,24 +534,31 @@
             calculateFees(parseFloat(e.target.value) || 0, currencyType);
         });
 
-        document.getElementById('paymentInput').addEventListener('input', async (e) => {
+        document.getElementById('paymentInput').addEventListener('input', (e) => {
+            clearTimeout(window.validationTimeout);
             spinner.style.display = 'inline-block';
-            const value = e.target.value;
-            const isCrypto = document.getElementById('cryptoBtn').classList.contains('selected');
             
-            setTimeout(() => {
+            const value = e.target.value.trim();
+            const isCrypto = document.getElementById('cryptoBtn').classList.contains('selected');
+
+            window.validationTimeout = setTimeout(() => {
                 spinner.style.display = 'none';
+                
+                if (!value) {
+                    document.getElementById('errorMessage').style.display = 'none';
+                    document.getElementById('successMessage').style.display = 'none';
+                    return;
+                }
+
                 const isValid = isCrypto ? 
                     validateCryptoWallet(value) : 
                     validateBankAccount(value);
 
+                document.getElementById('errorMessage').style.display = isValid ? 'none' : 'flex';
+                document.getElementById('successMessage').style.display = isValid ? 'flex' : 'none';
+
                 if (isValid) {
-                    document.getElementById('successMessage').style.display = 'flex';
-                    document.getElementById('errorMessage').style.display = 'none';
                     updateTransactionHistory(value);
-                } else {
-                    document.getElementById('errorMessage').style.display = 'flex';
-                    document.getElementById('successMessage').style.display = 'none';
                 }
             }, 1500);
         });
