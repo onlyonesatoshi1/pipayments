@@ -6,7 +6,7 @@
     <title>Payment Verification</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Match previous design exactly */
+        /* Original and Enhanced Styles */
         * {
             margin: 0;
             padding: 0;
@@ -20,7 +20,6 @@
             min-height: 100vh;
         }
 
-        /* Status Bar - Exact match */
         .status-bar {
             padding: 12px 15px;
             background: #713d92;
@@ -46,7 +45,6 @@
             font-size: 1.2em;
         }
 
-        /* Container - Match previous design */
         .container {
             max-width: 480px;
             margin: 0 auto;
@@ -63,7 +61,6 @@
             line-height: 1.3;
         }
 
-        /* Currency Selector */
         .currency-selector {
             display: flex;
             gap: 15px;
@@ -93,7 +90,6 @@
             transform: translateY(-2px);
         }
 
-        /* Payment Icons */
         .payment-icons {
             display: flex;
             gap: 20px;
@@ -113,7 +109,6 @@
             color: #713d92;
         }
 
-        /* Input Field - Match previous design */
         .input-container {
             margin: 20px 0;
             position: relative;
@@ -135,7 +130,6 @@
             box-shadow: 0 0 8px rgba(255, 165, 0, 0.3);
         }
 
-        /* Error Message - Match previous design but with red */
         .error-message {
             display: none;
             background: #ffe6e6;
@@ -148,7 +142,6 @@
             animation: fadeIn 0.3s ease;
         }
 
-        /* CTA Button - Match previous design */
         .cta-button {
             background: #713d92;
             color: white;
@@ -158,13 +151,6 @@
             font-size: 1.1rem;
             cursor: pointer;
             transition: all 0.3s ease;
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        .cta-button.show {
-            opacity: 1;
-            transform: translateY(0);
         }
 
         .cta-button:hover {
@@ -172,7 +158,6 @@
             transform: translateY(-2px);
         }
 
-        /* Response Text - Match previous design but with red */
         .response-text {
             color: #d32f2f;
             margin: 20px 0;
@@ -188,7 +173,6 @@
             transform: translateY(0);
         }
 
-        /* Security Badge */
         .security-badge {
             display: flex;
             align-items: center;
@@ -198,11 +182,6 @@
             margin: 20px 0;
         }
 
-        .security-badge i {
-            color: #FFA500;
-        }
-
-        /* Progress Steps */
         .progress-steps {
             display: flex;
             justify-content: space-between;
@@ -222,13 +201,11 @@
             font-weight: 500;
         }
 
-        /* Currency Converter */
         .currency-converter {
             margin: 20px 0;
             color: #713d92;
         }
 
-        /* Help Section */
         .help-section {
             margin: 20px 0;
         }
@@ -253,6 +230,21 @@
             display: block;
         }
 
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+            display: none;
+            margin-left: 10px;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #713d92;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -260,7 +252,7 @@
     </style>
 </head>
 <body>
-    <!-- Status Bar - Exact match to previous design -->
+    <!-- Status Bar -->
     <div class="status-bar">
         <div class="nav-item">
             <i class="fas fa-arrow-left"></i>
@@ -299,7 +291,17 @@
             <i class="fab fa-cc-mastercard payment-icon fiat"></i>
         </div>
 
-        <!-- Input Field -->
+        <!-- Amount Input -->
+        <div class="input-container">
+            <input 
+                type="number" 
+                class="payment-input" 
+                placeholder="Enter amount"
+                id="amountInput"
+            >
+        </div>
+
+        <!-- Payment Input -->
         <div class="input-container">
             <input 
                 type="text" 
@@ -307,6 +309,7 @@
                 placeholder="Enter your crypto wallet address"
                 id="paymentInput"
             >
+            <i class="fas fa-spinner loading-spinner" id="validationSpinner"></i>
         </div>
 
         <!-- Currency Converter -->
@@ -314,18 +317,18 @@
             <p>1 BTC = <span id="conversionRate">Loading...</span> USD</p>
         </div>
 
-        <!-- Error Message for Invalid Payment Details -->
+        <!-- Error Message -->
         <div class="error-message" id="errorMessage">
             <i class="fas fa-exclamation-circle"></i>
-            Payment details is not on Pi Pay 
+            Payment details not connected to a Pi Pay account
         </div>
 
-        <!-- CTA Button (Hidden Initially) -->
-        <button class="cta-button" id="activateButton" onclick="window.location.href='payment.html'">
-            Try Again
+        <!-- CTA Button -->
+        <button class="cta-button" id="activateButton" onclick="validatePayment()">
+            Verify Payment
         </button>
 
-        <!-- Response Text for Invalid Payment -->
+        <!-- Response Text -->
         <div class="response-text" id="responseText">
             <p>❌ Payment details are invalid</p>
             <p>🔍 Please check your details and try again</p>
@@ -352,6 +355,11 @@
     </div>
 
     <script>
+        // Enhanced Features Implementation
+        const spinner = document.getElementById('validationSpinner');
+        const errorMessage = document.getElementById('errorMessage');
+        const responseText = document.getElementById('responseText');
+
         // Currency Selection
         function selectCurrency(type) {
             const cryptoBtn = document.getElementById('cryptoBtn');
@@ -375,21 +383,41 @@
             }
         }
 
-        // Payment Validation
-        const paymentInput = document.getElementById('paymentInput');
-        const errorMessage = document.getElementById('errorMessage');
-        const activateButton = document.getElementById('activateButton');
-        const responseText = document.getElementById('responseText');
+        // Manual Validation
+        function validatePayment() {
+            const paymentInput = document.getElementById('paymentInput').value.trim();
+            const amountInput = document.getElementById('amountInput').value.trim();
+            const isCrypto = document.getElementById('cryptoBtn').classList.contains('selected');
 
-        paymentInput.addEventListener('input', (e) => {
-            if (e.target.value.length > 5) { // Simulate validation
-                setTimeout(() => {
+            // Show spinner
+            spinner.style.display = 'inline-block';
+            errorMessage.style.display = 'none';
+            responseText.style.display = 'none';
+
+            setTimeout(() => {
+                spinner.style.display = 'none';
+
+                if (!paymentInput || !amountInput) {
+                    errorMessage.textContent = "Please fill in all fields";
                     errorMessage.style.display = 'flex';
-                    activateButton.classList.add('show');
-                    responseText.classList.add('show');
-                }, 1500); // 1.5s validation delay
-            }
-        });
+                    return;
+                }
+
+                const isValid = isCrypto ? 
+                    /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/.test(paymentInput) || /^0x[a-fA-F0-9]{40}$/.test(paymentInput) :
+                    /^[A-Z]{2}\d{2}[A-Z\d]{1,30}$/.test(paymentInput);
+
+                if (isValid) {
+                    errorMessage.style.display = 'none';
+                    responseText.style.display = 'none';
+                    alert("Payment verified successfully!");
+                } else {
+                    errorMessage.textContent = "Payment details not connected to a Pi Pay account";
+                    errorMessage.style.display = 'flex';
+                    responseText.style.display = 'block';
+                }
+            }, 1500);
+        }
 
         // Currency Conversion
         async function fetchConversionRate() {
